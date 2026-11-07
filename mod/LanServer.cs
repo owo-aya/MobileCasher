@@ -17,23 +17,38 @@ internal sealed class LanServer : IDisposable {
     public bool Connected => DateTime.UtcNow.Ticks - Interlocked.Read(ref lastPoll) < TimeSpan.FromSeconds(5).Ticks;
     public int Port => ((IPEndPoint)listener.LocalEndpoint).Port;
 
-    public LanServer(string webRoot, string sounds, IPAddress address = null, int port = 47635) {
+    public LanServer(IPAddress address = null, int port = 47635) {
         foreach (var file in new[] { "index.html", "receipt.css", "receipt.js", "live.css", "live.js",
                      "assets/unknown.svg", "assets/transfer-rounded.ttf" })
-            files["/" + file] = File.ReadAllBytes(Path.Combine(webRoot, file));
+            files["/" + file] = ReadPhoneResource(file);
         files["/"] = files["/index.html"];
         var clipNames = new List<string>();
-        foreach (var path in System.IO.Directory.GetFiles(sounds, "*.mp3")) {
-            files["/sounds/" + Path.GetFileName(path)] = File.ReadAllBytes(path);
-            var token = Path.GetFileNameWithoutExtension(path);
-            if (System.Text.RegularExpressions.Regex.IsMatch(token, "^(tts_|wx_)[a-z0-9_]+$"))
-                clipNames.Add("\"" + token + "\"");
+        var tokens = new[] {
+            "tts_0", "tts_1", "tts_2", "tts_3", "tts_4", "tts_5", "tts_6", "tts_7", "tts_8", "tts_9",
+            "tts_dot", "tts_ten", "tts_hundred", "tts_thousand", "tts_ten_thousand", "tts_ten_million",
+            "tts_yuan", "tts_success", "wx_success", "wx_chime", "wx_prefix"
+        };
+        foreach (var token in tokens) {
+            var audio = ModHelper.ReadModFileBytes("announce_the_transaction", "Sounds/" + token + ".mp3");
+            if (audio == null) throw new InvalidOperationException("前置模组缺少语音文件：" + token + ".mp3");
+            files["/sounds/" + token + ".mp3"] = audio;
+            clipNames.Add("\"" + token + "\"");
         }
         files["/clips"] = Encoding.UTF8.GetBytes("[" + string.Join(",",clipNames) + "]");
         listener = new TcpListener(address ?? IPAddress.Any, port);
         try { listener.Start(); }
         catch (SocketException) { listener = new TcpListener(address ?? IPAddress.Any, 0); listener.Start(); }
         new Thread(Accept) { IsBackground = true, Name = "MobileCasher HTTP" }.Start();
+    }
+    static byte[] ReadPhoneResource(string file) {
+        string name = "MobileCasher.Phone." + file.Replace('/', '.');
+        using (var stream = typeof(LanServer).Assembly.GetManifestResourceStream(name)) {
+            if (stream == null) throw new InvalidOperationException("缺少内嵌手机页面资源：" + file);
+            using (var output = new MemoryStream()) {
+                stream.CopyTo(output);
+                return output.ToArray();
+            }
+        }
     }
     public void Publish(string json) {
         lock (history) {

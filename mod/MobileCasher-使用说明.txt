@@ -1,7 +1,8 @@
-手机收款 / MobileCasher 0.3.3
+手机收款 / MobileCasher 0.4.0
 
 安装
-把压缩包里的 Mods 和 MobileCasherPhone 两个文件夹解压到 Probably Stolen.exe 所在目录。
+创意工坊订阅后，在游戏「改装件」中启用本模组与前置并重启即可。
+本地安装时，把压缩包里的 Mods 文件夹解压到 Probably Stolen.exe 所在目录。
 订阅并启用创意工坊的「到账语音播报 / Announce the Transaction」（适配版本 1.1.1），启用「手机收款 / MobileCasher」，按游戏提示重启。
 
 连接
@@ -21,3 +22,4 @@
 找不到交易顾客的入账显示「店铺入账」，头像缺失时使用占位图。
 
 二维码生成使用 Net.Codecrete.QrCodeGenerator 2.0.6，许可证见 Mods/MobileCasher/QrCodeGenerator-LICENSE.txt。
+网页、样式、动效及字体均内嵌于 MobileCasher.dll，前置语音通过游戏受限接口读取。

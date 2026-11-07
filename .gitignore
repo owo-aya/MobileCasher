@@ -2,6 +2,7 @@ analysis/
 dist/
 output/
 relay/
+tools/
 bin/
 obj/
 .vs/

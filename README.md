@@ -24,6 +24,7 @@
 | `preview/` | 收款页面模板、样式、动效和预览素材 |
 | `lib/` | 二维码依赖的许可证 |
 | `build.ps1` | 使用本机游戏程序集构建与打包 |
+| `prepare-workshop.ps1` | 准备工坊目录、封面和 SteamCMD 上传配置 |
 | `workshop-description.txt` | 可直接粘贴到创意工坊简介中的 Steam BBCode 文案 |
 
 ## 从源码构建
@@ -42,15 +43,24 @@
 
 首次构建会从 NuGet 下载 Net.Codecrete.QrCodeGenerator 2.0.6。构建使用游戏自带的 Unity、Harmony 和游戏程序集，生成 `dist/MobileCasher.zip`。
 
-本地构建后，将包内的 `Mods` 和 `MobileCasherPhone` 放入游戏根目录，在「改装件」中启用前置与本模组并重启。手机与电脑连接同一局域网，在本模组设置页扫码，用手机浏览器点击「开始收款」并保持页面在前台。
+手机页面随 DLL 内嵌，构建生成独立工坊目录 `dist/workshop/MobileCasher` 和本地安装包。将安装包内的 `Mods` 放入游戏根目录，在「改装件」中启用前置与本模组并重启。手机与电脑连接同一局域网，在本模组设置页扫码，用手机浏览器点击「开始收款」并保持页面在前台。
+
+准备创意工坊发布时，指定封面图片。
+
+```powershell
+.\prepare-workshop.ps1 -CoverFile '封面图片路径'
+```
+
+脚本生成封面 JPEG 和 `dist/mobilecasher.vdf`，首次上传的可见性默认设为隐藏。SteamCMD 会将创建的物品 ID 写回该 VDF，后续构建保留这个 ID，以便更新同一物品。
 
 ## 权限与安全
 
-当前声明三项能力。
+当前声明两项能力。
 
 - **network** 用于启动局域网 HTTP 服务，向手机提供页面、语音和游戏到账数据。
-- **files** 用于读取固定网页资源和前置模组的 MP3 文件。
 - **reflection-external** 用于对接已加载前置模组的设置、数字语音序列及播报入口。
+
+网页、样式、动效和字体随 DLL 内嵌，前置 MP3 通过游戏提供的受限读取接口加载，因此当前实现已移除直接文件访问能力。
 
 这些说明对应当前代码的用途，游戏授予的权限范围更广。
 

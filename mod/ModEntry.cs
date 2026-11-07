@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -104,8 +103,7 @@ public sealed class Bridge : MonoBehaviour {
         if (parser == null || platform == null || speed == null || volume == null || gap == null ||
             voiceInstance == null || prime == null || poll == null)
             throw new InvalidOperationException("需要兼容 Announce the Transaction 1.1.1 的版本");
-        var webRoot = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "MobileCasherPhone"));
-        server = new LanServer(webRoot, Path.Combine(dep.FolderPath, "Sounds"));
+        server = new LanServer();
         dependency = dep;
         active = this;
         voice.Patch(player.GetMethod("AnnounceAmount"), prefix: new HarmonyMethod(typeof(Bridge), nameof(RouteVoice)));
