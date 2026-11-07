@@ -23,6 +23,7 @@
 | `mod/` | 游戏对接、局域网服务、原生设置页及手机端联动代码 |
 | `preview/` | 收款页面模板、样式、动效和预览素材 |
 | `lib/` | 二维码依赖的许可证 |
+| `third_party/QrCodeGenerator/` | 二维码标准核心源码及来源说明 |
 | `build.ps1` | 使用本机游戏程序集构建与打包 |
 | `prepare-workshop.ps1` | 准备工坊目录、封面和 SteamCMD 上传配置 |
 | `workshop-description.txt` | 可直接粘贴到创意工坊简介中的 Steam BBCode 文案 |
@@ -41,7 +42,7 @@
 .\build.ps1 -GameDir '你的游戏安装目录'
 ```
 
-首次构建会从 NuGet 下载 Net.Codecrete.QrCodeGenerator 2.0.6。构建使用游戏自带的 Unity、Harmony 和游戏程序集，生成 `dist/MobileCasher.zip`。
+构建会编译仓库附带的二维码标准核心源码，并使用本机游戏自带的 Unity、Harmony 和游戏程序集，生成 `dist/MobileCasher.zip`。
 
 手机页面随 DLL 内嵌，构建生成独立工坊目录 `dist/workshop/MobileCasher` 和本地安装包。将安装包内的 `Mods` 放入游戏根目录，在「改装件」中启用前置与本模组并重启。手机与电脑连接同一局域网，在本模组设置页扫码，用手机浏览器点击「开始收款」并保持页面在前台。
 
@@ -75,5 +76,5 @@
 ## 致谢
 
 - 到账语音及金额语音序列来自「到账语音播报 / Announce the Transaction」。
-- 二维码生成使用 Net.Codecrete.QrCodeGenerator 2.0.6，采用 MIT 许可证。[许可证](lib/QrCodeGenerator-LICENSE.txt)
+- 二维码生成使用 Net.Codecrete.QrCodeGenerator 2.0.6 的标准核心源码，采用 MIT 许可证。[来源说明](third_party/QrCodeGenerator/README.md)
 - 微信转账字体使用 Chiron GoRound。[字体许可证](preview/assets/Chiron-GoRound-LICENSE.txt)

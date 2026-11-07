@@ -12,17 +12,11 @@ $release = Join-Path $PSScriptRoot "dist/release/$version"
 $install = Join-Path $release 'Mods/MobileCasher'
 New-Item -Force -ItemType Directory $out,"$web/assets",$install | Out-Null
 
-$qrLibrary = Join-Path $PSScriptRoot 'lib/QrCodeGenerator.dll'
-if (-not (Test-Path -LiteralPath $qrLibrary)) {
-    $qrPackage = Join-Path $PSScriptRoot 'lib/QrCodeGenerator.2.0.6.nupkg'
-    Invoke-WebRequest -UseBasicParsing -Uri 'https://api.nuget.org/v3-flatcontainer/net.codecrete.qrcodegenerator/2.0.6/net.codecrete.qrcodegenerator.2.0.6.nupkg' -OutFile $qrPackage
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
-    $archive = [IO.Compression.ZipFile]::OpenRead($qrPackage)
-    try {
-        $entry = $archive.GetEntry('lib/netstandard2.0/QrCodeGenerator.dll')
-        [IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $qrLibrary, $true)
-    } finally { $archive.Dispose() }
-}
+$qrLibrary = Join-Path $out 'QrCodeGenerator.dll'
+$qrSources = (Get-ChildItem "$PSScriptRoot/third_party/QrCodeGenerator/*.cs").FullName
+$qrRefs = 'mscorlib','System','System.Core' | ForEach-Object { '/r:' + (Join-Path $managed "$_.dll") }
+& $dotnet $csc /nologo /noconfig /nostdlib+ /target:library /optimize+ "/out:$qrLibrary" $qrRefs $qrSources
+if ($LASTEXITCODE -ne 0) { throw '二维码核心库编译失败' }
 
 Copy-Item preview/receipt.css,preview/receipt.js,mod/live.js,mod/live.css $web
 Copy-Item preview/assets/transfer-rounded.ttf,mod/unknown.svg "$web/assets"
@@ -45,7 +39,7 @@ $sources = (Get-ChildItem "$PSScriptRoot/mod/*.cs").FullName
 & $dotnet $csc /nologo /noconfig /nostdlib+ /target:library /optimize+ "/out:$out/MobileCasher.dll" $refArgs $resourceArgs $sources
 if ($LASTEXITCODE -ne 0) { throw '编译失败' }
 
-Copy-Item mod/manifest.xml,lib/QrCodeGenerator.dll,lib/QrCodeGenerator-LICENSE.txt,preview/assets/Chiron-GoRound-LICENSE.txt $out
+Copy-Item mod/manifest.xml,lib/QrCodeGenerator-LICENSE.txt,preview/assets/Chiron-GoRound-LICENSE.txt $out
 Copy-Item "$out/MobileCasher.dll","$out/manifest.xml","$out/QrCodeGenerator.dll","$out/QrCodeGenerator-LICENSE.txt","$out/Chiron-GoRound-LICENSE.txt" $install
 Copy-Item mod/MobileCasher-使用说明.txt,README.md,workshop-description.txt $release
 Compress-Archive -Path "$release/*" -DestinationPath "dist/MobileCasher-v$version.zip" -Force

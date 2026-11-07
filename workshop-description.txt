@@ -75,4 +75,4 @@
 
 到账语音与金额语音序列逻辑来自前置「到账语音播报 / Announce the Transaction」。
 
-二维码生成使用 Net.Codecrete.QrCodeGenerator 2.0.6，采用 MIT 许可证。微信转账字体使用 Chiron GoRound，相关许可证随发布包附带。
+二维码生成使用 Net.Codecrete.QrCodeGenerator 2.0.6 的标准核心源码，采用 MIT 许可证。微信转账字体使用 Chiron GoRound，相关许可证随发布包附带。

@@ -1,4 +1,4 @@
-手机收款 / MobileCasher 0.4.0
+手机收款 / MobileCasher 0.4.1
 
 安装
 创意工坊订阅后，在游戏「改装件」中启用本模组与前置并重启即可。
@@ -21,5 +21,5 @@
 每笔到账依次播放，电脑端的到账播报在本模组工作期间静音。
 找不到交易顾客的入账显示「店铺入账」，头像缺失时使用占位图。
 
-二维码生成使用 Net.Codecrete.QrCodeGenerator 2.0.6，许可证见 Mods/MobileCasher/QrCodeGenerator-LICENSE.txt。
+二维码生成使用 Net.Codecrete.QrCodeGenerator 2.0.6 的标准核心源码，许可证见 Mods/MobileCasher/QrCodeGenerator-LICENSE.txt。
 网页、样式、动效及字体均内嵌于 MobileCasher.dll，前置语音通过游戏受限接口读取。
