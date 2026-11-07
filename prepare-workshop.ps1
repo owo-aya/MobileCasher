@@ -24,7 +24,7 @@ try {
 }
 
 function ConvertTo-VdfText([string]$Value) {
-    $Value.Replace('\', '\\').Replace('"', '\"').Replace("`r", '').Replace("`n", '\n')
+    $Value.Replace('\', '\\').Replace('"', '\"').Replace("`r", '')
 }
 $vdfPath = Join-Path $PSScriptRoot 'dist/mobilecasher.vdf'
 $publishedId = '0'
