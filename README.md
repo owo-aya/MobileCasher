@@ -4,7 +4,7 @@
 
 ## 创意工坊
 
-本模组的创意工坊页面待发布，发布后会在此处加入正式链接。
+[Steam 创意工坊页面（仅好友可见）](https://steamcommunity.com/sharedfiles/filedetails/?id=3835402643)
 
 需要前置「到账语音播报 / Announce the Transaction」，当前适配版本为 **1.1.1**。[前置创意工坊页面](https://steamcommunity.com/sharedfiles/filedetails/?id=3831162516)
 
