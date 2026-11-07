@@ -1,0 +1,20 @@
+html[data-live] main { margin: auto; width: min(100%, 460px); }
+html[data-live] form { display:none; }
+html[data-live] .stage[hidden], #waiting[hidden] { display:none; }
+html[data-live] .stage, html[data-live] .wechat { min-height: 100svh; }
+#connection-panel { padding: clamp(64px, 20svh, 160px) 24px 24px; }
+#connection-panel[hidden], #browser-guide[hidden], #use-embedded[hidden] { display:none; }
+#waiting { margin:0 0 20px; font-size:18px; font-weight:600; }
+#browser-guide { margin:0 0 28px; color:var(--muted); }
+#link-label { margin:0 0 8px; color:var(--muted); }
+#connection-link { display:block; overflow-wrap:anywhere; color:var(--ink); user-select:text; -webkit-user-select:text; }
+#copy-link, #use-embedded { display:block; margin:16px 0 0; min-height:44px; }
+#copy-status { min-height:20px; color:var(--muted); }
+#connect, #connection-status { display:block; margin: 12px auto; text-align:center; }
+#connect[hidden], #connection-status:empty { display:none; }
+#live-sender { display:none; }
+.stage[data-platform="wechat"] #live-sender {
+  display:block; position:absolute; bottom:calc(100% + 4px); left:0; width:100%;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); font:14px/1.4 sans-serif;
+}
+html[data-live] .wechat-back { display:none; }

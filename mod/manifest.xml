@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Manifest>
+  <ID>mobilecasher</ID><Name>手机收款 / MobileCasher</Name><Author>MobileCasher</Author><ModVersion>0.3.3</ModVersion>
+  <Description>在同一局域网的手机上显示游戏收款并播放到账语音。在模组设置中扫码连接。</Description>
+  <GameVersions/><Prerequisites><Mod>announce_the_transaction</Mod></Prerequisites>
+  <Assemblies><Assembly>QrCodeGenerator.dll</Assembly><Assembly>MobileCasher.dll</Assembly></Assemblies>
+  <Capabilities><Capability>files</Capability><Capability>network</Capability><Capability>reflection-external</Capability></Capabilities>
+</Manifest>

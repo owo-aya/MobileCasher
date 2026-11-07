@@ -1,0 +1,13 @@
+analysis/
+dist/
+output/
+relay/
+bin/
+obj/
+.vs/
+.idea/
+lib/*.dll
+lib/*.nupkg
+*.pdb
+*.user
+*.suo

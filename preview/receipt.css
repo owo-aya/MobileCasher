@@ -1,0 +1,153 @@
+/* Neutral steps from @radix-ui/colors 3.0.0 (Gray and Gray Dark). */
+:root {
+  color-scheme: light;
+  --canvas: #f0f0f0; --surface: #fcfcfc; --page: #f9f9f9;
+  --control: #f0f0f0; --hover: #e8e8e8; --line: #d9d9d9;
+  --edge: #cecece; --muted: #646464; --ink: #202020;
+}
+:root[data-scheme="dark"] {
+  color-scheme: dark;
+  --canvas: #111111; --surface: #191919; --page: #111111;
+  --control: #222222; --hover: #2a2a2a; --line: #3a3a3a;
+  --edge: #484848; --muted: #b4b4b4; --ink: #eee;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; min-height: 100vh; background: var(--canvas); color: var(--ink);
+  font: 14px/1.45 "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+main { width: min(100%, 400px); margin: clamp(0px, 7vh, 64px) auto 16px; }
+.stage { container-type: inline-size; background: var(--page); }
+article { display: flow-root; background: var(--surface); }
+header { text-align: center; }
+#avatar { display: block; margin: auto; object-fit: cover; background: var(--control); }
+#payer { color: var(--ink); }
+#amount { margin: 0; line-height: 1.15; font-variant-numeric: tabular-nums; }
+#status { margin: 0; font-size: 18px; }
+dl { display: grid; margin: 0; align-items: baseline; }
+dt { color: var(--muted); }
+dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.alipay { margin-inline: 3.2cqw; padding: 3.5cqw 3.4cqw 8.5cqw; border-radius: 3cqw; }
+.alipay #avatar { width: 14.4cqw; height: 14.4cqw; border-radius: 50%; }
+.alipay #payer { margin-top: 5.4cqw; font-size: 18px; }
+.alipay #amount { margin-block: 5.4cqw 4.4cqw; font-size: 40px; font-weight: 750; letter-spacing: -.035em; }
+.alipay dl { margin-top: 7.8cqw; grid-template-columns: 30cqw 1fr; row-gap: 4.4cqw; font-size: 18px; }
+.chevron { display: inline-block; width: .44em; height: .44em; vertical-align: .09em;
+  border: solid var(--muted); border-width: .5px .5px 0 0; transform: rotate(45deg); margin-left: .22em; }
+.wx-only { display: none; }
+.wechat { position: relative; display: flex; flex-direction: column; padding-inline: 8cqw;
+  min-height: min(217cqw, 85svh); }
+.wechat .wx-only { display: block; }
+.wechat .wechat-back { position: absolute; top: 14cqw; left: 1cqw; width: 36px; height: 36px;
+  padding: 0; border: 0; background: transparent; }
+.wechat header { padding-top: 37.4cqw; }
+.wechat :is(#avatar,#payer) { display: none; }
+.wechat .success-mark { width: 13.4cqw; height: 13.4cqw; margin: auto;
+  border-radius: 50%; background: #30a46c; color: var(--surface); }
+.success-mark svg { display: block; width: 100%; height: 100%; }
+.wechat .success-copy { margin: 9.1cqw 0 0; font-size: 18px; }
+.wechat #amount { margin: 4.4cqw 0 0; font-size: 40px; font-weight: 650;
+  font-variant-numeric: tabular-nums; }
+.currency { font-size: 32px; vertical-align: .13em; margin-right: .16em; }
+.balance-caption, .bill-caption { color: var(--link-text); }
+.wechat { --link-text: #60646c; }
+:root[data-scheme="dark"] .wechat { --link-text: #b0b4ba; }
+.balance-caption { margin: 4.3cqw 0 0; }
+.wechat dl { margin-top: 7.9cqw; border-top: .5px solid var(--line); padding-top: 4cqw;
+  grid-template-columns: auto 1fr; row-gap: 2cqw; }
+.wechat dd { text-align: right; }
+.bill-caption { margin: auto 0 0; padding: 14cqw 0 9.6cqw; text-align: center; }
+.stage[data-variant="person"][data-phase="intro"] .wechat { visibility: hidden; }
+.stage[data-variant="person"][data-phase="intro"] .wechat :is(#avatar,#payer) {
+  position: absolute; display: block; visibility: visible; left: 50%; transform: translateX(-50%); }
+.stage[data-variant="person"][data-phase="intro"] .wechat #avatar { top: 4.2cqw; width: 15cqw; height: 15cqw; border-radius: 5px; }
+.stage[data-variant="person"][data-phase="intro"] .wechat #payer { top: 23cqw; font-size: 18px; }
+form { display: flex; align-items: center; gap: 8px; padding: 18px 12px; }
+select, button {
+  background: var(--control); color: var(--ink); font: inherit; padding: 7px 9px;
+  border: .5px solid var(--edge); border-radius: 5px; cursor: pointer;
+}
+button { margin-left: auto; }
+select:hover, button:hover { background: var(--hover); }
+:focus-visible { outline: .5px solid var(--ink); outline-offset: 2px; }
+@media (max-width: 440px) { main { margin-top: 0; } }
+
+.stage { position: relative; overflow: hidden; --accent: #0d74ce; --wash: #f4faff; }
+.stage[data-platform="wechat"] { --accent: #218358; --wash: #f4fbf6; }
+:root[data-scheme="dark"] .stage { --accent: #70b8ff; --wash: #111927; }
+:root[data-scheme="dark"] .stage[data-platform="wechat"] { --accent: #3dd68c; --wash: #121b17; }
+#intro { position: absolute; inset: 0; display: none; pointer-events: none;
+  color: var(--accent); font-size: 18px; font-weight: 600; }
+.stage[data-phase="intro"] #intro { display: flex; align-items: center; justify-content: center; }
+.stage[data-variant="platform"] #intro { flex-direction: column; gap: 16px; background: var(--wash); }
+.stage[data-platform="wechat"][data-variant="platform"] #intro { flex-direction: row; gap: 10px; }
+.mark { display: grid; place-items: center; width: 54px; height: 54px; }
+.mark svg { width: 100%; height: 100%; }
+.mark path { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.stage[data-platform="alipay"] .chat, .stage[data-platform="wechat"] .ticket { display: none; }
+.stage[data-phase="intro"][data-variant="platform"] article { visibility: hidden; }
+.stage[data-phase="intro"]:is([data-variant="money"],[data-variant="person"]) dl,
+.stage[data-phase="intro"] #status,
+.stage[data-phase="intro"][data-variant="person"] #amount,
+.stage[data-phase="intro"][data-variant="money"] :is(#payer,#avatar) { visibility: hidden; }
+.stage[data-variant="person"] #intro { inset: 35cqw 0 auto; font-size: 14px; }
+.stage[data-variant="money"] { min-height: min(74svh, 660px); background: var(--surface); }
+.stage[data-phase="intro"][data-variant="money"] article { visibility: hidden; }
+.stage[data-variant="money"] #intro { inset: 0; background: var(--surface); }
+.stage[data-variant="money"] .intro-label, .money-slip { display: none; }
+.stage[data-variant="money"] .money-slip {
+  display: block; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 80%; height: 168px; color: var(--accent); background: var(--wash);
+}
+.money-slip .slip-heading { position: absolute; inset: 18px 0 auto; display: flex;
+  justify-content: center; align-items: center; gap: 6px; font-size: 14px; }
+.slip-heading svg { width: 23px; height: 23px; fill: none; stroke: currentColor;
+  stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+#first-amount { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  color: var(--ink); line-height: 1.15; font-variant-numeric: tabular-nums; font-size: 40px; white-space: nowrap; }
+.stage[data-platform="alipay"] #first-amount { font-weight: 750; letter-spacing: -.035em; }
+.stage[data-platform="alipay"] .money-slip { top: var(--alipay-start-y, 38%); border-top: .5px solid var(--accent);
+  mask: radial-gradient(circle at 50% 100%, transparent 3px, black 3.5px) 0 0 / 12px 100% repeat-x; }
+.stage[data-platform="alipay"] .money-slip::after { content: ""; position: absolute;
+  bottom: 26px; left: 6%; right: 6%; border-top: .5px dashed var(--edge); }
+@font-face {
+  font-family: "Chiron GoRound Receipt";
+  src: url("assets/transfer-rounded.ttf") format("truetype");
+  font-weight: 500;
+  font-display: swap;
+}
+#sender-avatar, .transfer-symbol, .transfer-prompt, .transfer-footer { display: none; }
+.stage[data-platform="wechat"] .money-slip { left: 19cqw; width: 75cqw; transform: translateY(-50%);
+  height: auto; aspect-ratio: 400 / 140;
+  font-family: "Chiron GoRound Receipt", "YouYuan", sans-serif; font-weight: 500; font-synthesis: none;
+  border-radius: 5px; color: #fefcfb; background: #ec9455; }
+.stage[data-platform="wechat"] #sender-avatar {
+  display: block; position: absolute; top: 0; right: calc(100% + 3cqw);
+  width: 10cqw; height: 10cqw; border-radius: 5px; object-fit: cover; background: var(--control);
+}
+:root[data-scheme="dark"] .stage[data-platform="wechat"] .money-slip { background: #a35829; }
+.stage[data-platform="wechat"] .money-slip::before { content: ""; position: absolute;
+  top: 20%; left: -4px; width: 10px; height: 10px; transform: rotate(45deg); background: inherit; }
+.stage[data-platform="wechat"] .slip-heading { display: none; }
+.stage[data-platform="wechat"] :is(.transfer-symbol,.transfer-prompt,.transfer-footer) { position: absolute; display: block; }
+.transfer-symbol { top: 14%; left: 4.5%; width: 16%; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.stage[data-platform="wechat"] #first-amount { left: 25.5%; top: 13%; transform: none;
+  color: inherit; font-size: 18px; font-weight: 500; transform-origin: left center; }
+.transfer-prompt, .transfer-footer { font-size: 14px; font-weight: 500; }
+.transfer-prompt { top: 41%; left: 25.5%; }
+.transfer-footer { left: 4%; bottom: 4%; }
+.stage[data-phase="reveal"] #intro { display: block; }
+.stage[data-phase="reveal"] #first-amount { visibility: hidden; }
+.stage[data-phase="reveal"] #amount { position: relative; z-index: 1; }
+.stage[data-variant="platform"] .mark { background: var(--surface); border-radius: 50%; padding: 9px; }
+.stage[data-platform="wechat"][data-variant="platform"] .mark { border-radius: 12px; }
+.stage:is([data-variant="money"],[data-variant="person"]) .mark { display: none; }
+form { flex-wrap: wrap; }
+#variants { display: flex; width: 100%; border: 0; margin: 0 0 4px; padding: 3px;
+  background: var(--control); border-radius: 6px; }
+#variants label { flex: 1; position: relative; text-align: center; padding: 6px 2px; border-radius: 3px; cursor: pointer; }
+#variants label:has(:checked) { background: var(--surface); font-weight: 600; }
+#variants input { position: absolute; opacity: 0; }
+#variants label:focus-within { outline: .5px solid var(--ink); }
+.hold { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); cursor: pointer; }
+.hold input { accent-color: var(--ink); }
