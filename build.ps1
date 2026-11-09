@@ -1,4 +1,7 @@
-param([string]$GameDir = 'D:\Steam\steamapps\common\Probably Stolen')
+param(
+    [string]$GameDir = 'D:\Steam\steamapps\common\Probably Stolen',
+    [string]$DependencyDir = ''
+)
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 $managed = Join-Path $GameDir 'Probably Stolen_Data/Managed'
@@ -11,6 +14,15 @@ $web = Join-Path $PSScriptRoot 'dist/build/phone'
 $release = Join-Path $PSScriptRoot "dist/release/$version"
 $install = Join-Path $release 'Mods/MobileCasher'
 New-Item -Force -ItemType Directory $out,"$web/assets",$install | Out-Null
+if (!$DependencyDir) {
+    $steamapps = Split-Path (Split-Path $GameDir)
+    $DependencyDir = Join-Path $steamapps 'workshop/content/4348910/3831162516'
+}
+$dependencyDll = Join-Path $DependencyDir 'AnnounceTheTransaction.dll'
+# Only names are embedded. Audio remains in the installed prerequisite's folder.
+$tokens = Get-ChildItem -LiteralPath (Join-Path $DependencyDir 'Sounds') -Filter '*.mp3' -File |
+    Sort-Object Name | ForEach-Object BaseName
+[IO.File]::WriteAllText("$web/sound-tokens.txt", ($tokens -join "`n"), [Text.UTF8Encoding]::new($false))
 
 $qrLibrary = Join-Path $out 'QrCodeGenerator.dll'
 $qrSources = (Get-ChildItem "$PSScriptRoot/third_party/QrCodeGenerator/*.cs").FullName
@@ -27,7 +39,7 @@ $html = $html.Replace('<div class="stage">','<div class="stage" hidden>')
 $html = $html.Replace('<div class="money-slip">','<div class="money-slip"><span id="live-sender"></span>')
 $html = $html.Replace('</html>','<script src="live.js"></script></html>')
 [IO.File]::WriteAllText("$web/index.html", $html)
-$resourceFiles = 'index.html','receipt.css','receipt.js','live.css','live.js','assets/unknown.svg','assets/transfer-rounded.ttf'
+$resourceFiles = 'index.html','receipt.css','receipt.js','live.css','live.js','sound-tokens.txt','assets/unknown.svg','assets/transfer-rounded.ttf'
 $resourceArgs = $resourceFiles | ForEach-Object {
     '/resource:' + (Join-Path $web $_) + ',MobileCasher.Phone.' + $_.Replace('/', '.')
 }
@@ -35,6 +47,7 @@ $resourceArgs = $resourceFiles | ForEach-Object {
 $refs = 'mscorlib','System','System.Core','netstandard','Assembly-CSharp','0Harmony','UnityEngine.CoreModule','UnityEngine.UI','UnityEngine.TextRenderingModule','UnityEngine.IMGUIModule','UnityEngine.ImageConversionModule','UnityEngine.JSONSerializeModule'
 $refArgs = $refs | ForEach-Object { '/r:' + (Join-Path $managed "$_.dll") }
 $refArgs += '/r:' + $qrLibrary
+$refArgs += '/r:' + $dependencyDll
 $sources = (Get-ChildItem "$PSScriptRoot/mod/*.cs").FullName
 & $dotnet $csc /nologo /noconfig /nostdlib+ /target:library /optimize+ "/out:$out/MobileCasher.dll" $refArgs $resourceArgs $sources
 if ($LASTEXITCODE -ne 0) { throw '编译失败' }

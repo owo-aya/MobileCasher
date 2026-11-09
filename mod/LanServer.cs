@@ -11,6 +11,7 @@ internal sealed class LanServer : IDisposable {
     readonly TcpListener listener;
     readonly Dictionary<string, byte[]> files = new Dictionary<string, byte[]>();
     readonly Queue<KeyValuePair<long,string>> history = new Queue<KeyValuePair<long,string>>();
+    readonly HashSet<TcpClient> clients = new HashSet<TcpClient>();
     long sequence;
     long lastPoll;
     volatile bool stopped;
@@ -23,11 +24,9 @@ internal sealed class LanServer : IDisposable {
             files["/" + file] = ReadPhoneResource(file);
         files["/"] = files["/index.html"];
         var clipNames = new List<string>();
-        var tokens = new[] {
-            "tts_0", "tts_1", "tts_2", "tts_3", "tts_4", "tts_5", "tts_6", "tts_7", "tts_8", "tts_9",
-            "tts_dot", "tts_ten", "tts_hundred", "tts_thousand", "tts_ten_thousand", "tts_ten_million",
-            "tts_yuan", "tts_success", "wx_success", "wx_chime", "wx_prefix"
-        };
+        // This fixed resource is generated from the prerequisite at build time.
+        var tokens = Encoding.UTF8.GetString(ReadPhoneResource("sound-tokens.txt"))
+            .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
         foreach (var token in tokens) {
             var audio = ModHelper.ReadModFileBytes("announce_the_transaction", "Sounds/" + token + ".mp3");
             if (audio == null) throw new InvalidOperationException("前置模组缺少语音文件：" + token + ".mp3");
@@ -38,7 +37,10 @@ internal sealed class LanServer : IDisposable {
         listener = new TcpListener(address ?? IPAddress.Any, port);
         try { listener.Start(); }
         catch (SocketException) { listener = new TcpListener(address ?? IPAddress.Any, 0); listener.Start(); }
-        new Thread(Accept) { IsBackground = true, Name = "MobileCasher HTTP" }.Start();
+        if (!ModHelper.RunInBackground(ModEntry.ModId, Accept)) {
+            Dispose();
+            throw new InvalidOperationException("手机收款尚未启用，无法启动局域网服务");
+        }
     }
     static byte[] ReadPhoneResource(string file) {
         string name = "MobileCasher.Phone." + file.Replace('/', '.');
@@ -56,22 +58,33 @@ internal sealed class LanServer : IDisposable {
             if (history.Count > 64) history.Dequeue();
         }
     }
-    void Accept() {
-        while (!stopped) {
+    void Accept(CancellationToken token) {
+        // Cancellation must close blocking sockets, not merely set a loop flag.
+        using (token.Register(Dispose)) try {
+        while (!stopped && !token.IsCancellationRequested) {
             try {
                 var client = listener.AcceptTcpClient();
-                ThreadPool.QueueUserWorkItem(_ => Handle(client));
+                lock (clients) {
+                    if (stopped || token.IsCancellationRequested) { client.Close(); break; }
+                    clients.Add(client);
+                }
+                if (!ModHelper.RunInBackground(ModEntry.ModId, cancellation => Handle(client, cancellation))) {
+                    lock (clients) clients.Remove(client);
+                    client.Close();
+                }
             } catch (SocketException) { if (stopped) break; }
               catch (ObjectDisposedException) { break; }
         }
+        } finally { Dispose(); }
     }
-    void Handle(TcpClient client) {
-        using (client) try {
+    void Handle(TcpClient client, CancellationToken token) {
+        using (client) using (token.Register(client.Close)) try {
+            if (stopped || token.IsCancellationRequested) return;
             client.ReceiveTimeout = client.SendTimeout = 2500;
             var stream = client.GetStream();
             // Read just the request line, with a fixed upper bound.
             var line = new StringBuilder();
-            while (line.Length < 1024) {
+            while (line.Length < 1024 && !token.IsCancellationRequested) {
                 int ch = stream.ReadByte();
                 if (ch < 0) return;
                 if (ch == 10) break;
@@ -80,7 +93,7 @@ internal sealed class LanServer : IDisposable {
             var fields = line.ToString().Split(' ');
             if (fields.Length != 3 || fields[0] != "GET") return;
             int headerBytes = 0, consecutive = 1;
-            while (consecutive < 2) {
+            while (consecutive < 2 && !token.IsCancellationRequested) {
                 int ch = stream.ReadByte();
                 if (ch < 0 || ++headerBytes > 16384) return;
                 if (ch == 10) consecutive++;
@@ -114,10 +127,23 @@ internal sealed class LanServer : IDisposable {
             } else { status = "404 Not Found"; mime = "text/plain"; body = new byte[0]; }
             var header = Encoding.ASCII.GetBytes("HTTP/1.1 " + status + "\r\nContent-Type: " + mime +
                 "\r\nContent-Length: " + body.Length + "\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n");
+            if (stopped || token.IsCancellationRequested) return;
             stream.Write(header,0,header.Length);
             stream.Write(body,0,body.Length);
-        } catch (IOException) { } catch (SocketException) { }
+        } catch (IOException) { } catch (SocketException) { } catch (ObjectDisposedException) { }
+        finally { lock (clients) clients.Remove(client); }
     }
-    public void Dispose() { stopped = true; listener.Stop(); }
+    public void Dispose() {
+        TcpClient[] closing;
+        lock (clients) {
+            if (stopped) return;
+            stopped = true;
+            closing = new TcpClient[clients.Count];
+            clients.CopyTo(closing);
+            clients.Clear();
+        }
+        listener.Stop();
+        foreach (var client in closing) client.Close();
+    }
 }
 }

@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
+using AnnounceTheTransaction;
 
 namespace MobileCasher {
 public sealed class ModEntry : IMod {
@@ -63,15 +64,9 @@ internal static class SaleScope {
 public sealed class Bridge : MonoBehaviour {
     internal static Bridge Current { get; private set; }
     static Bridge active;
-    readonly Harmony voice = new Harmony("mobilecasher.phone-audio");
     LanServer server;
     Texture2D connectionQr;
     string localUrl;
-    MethodInfo parser;
-    PropertyInfo voiceInstance;
-    MethodInfo prime, poll;
-    PropertyInfo platform, speed, volume, gap;
-    LoadedMod dependency;
     float nextCheck;
     bool failed;
     string status = "等待前置模组 announce_the_transaction";
@@ -79,44 +74,30 @@ public sealed class Bridge : MonoBehaviour {
     internal string ConnectionUrl => localUrl;
     internal string ConnectionStatus => server != null && server.Connected ? "手机已连接" : status;
     void Awake() { Current = this; }
-    // Workshop assemblies load after local mods. Resolve the enabled instance on the first game frame.
+    // Bind after the loader has enabled the prerequisite and registered this mod.
     void Update() {
         if (server == null && !failed && Time.unscaledTime >= nextCheck) {
             nextCheck = Time.unscaledTime + 1;
-            var dep = ModLoader.Mods.FirstOrDefault(m => m.IsEnabled && m.Manifest.ID == "announce_the_transaction");
-            if (dep != null) try { Bind(dep); } catch (Exception e) {
+            if (ModHelper.IsModRunning("announce_the_transaction")) try { Bind(); } catch (Exception e) {
                 Shutdown(); failed = true; status = "手机收款启动失败：" + e.GetBaseException().Message;
                 Debug.LogError("[MobileCasher] " + status);
             }
         }
-        if (server != null && !dependency.IsEnabled) { Shutdown(); status = "等待前置模组 announce_the_transaction"; }
+        if (server != null && !ModHelper.IsModRunning("announce_the_transaction")) { Shutdown(); status = "等待前置模组 announce_the_transaction"; }
     }
-    void Bind(LoadedMod dep) {
-        var player = dep.Assembly.GetType("AnnounceTheTransaction.AnnouncementPlayer", true);
-        var settings = dep.Assembly.GetType("AnnounceTheTransaction.ModSettings", true);
-        voiceInstance = player.GetProperty("Instance");
-        prime = AccessTools.Method(player, "EnsureBaselineBeforeTransaction");
-        poll = player.GetMethod("PollCashNow");
-        parser = dep.Assembly.GetType("AnnounceTheTransaction.AlipayNumberParser", true).GetMethod("BuildSoundSequence");
-        platform = settings.GetProperty("Platform"); speed = settings.GetProperty("Speed");
-        volume = settings.GetProperty("Volume"); gap = settings.GetProperty("GapCompensationSec");
-        if (parser == null || platform == null || speed == null || volume == null || gap == null ||
-            voiceInstance == null || prime == null || poll == null)
-            throw new InvalidOperationException("需要兼容 Announce the Transaction 1.1.1 的版本");
+    void Bind() {
         server = new LanServer();
-        dependency = dep;
         active = this;
-        voice.Patch(player.GetMethod("AnnounceAmount"), prefix: new HarmonyMethod(typeof(Bridge), nameof(RouteVoice)));
-        var instance = player.GetProperty("Instance").GetValue(null, null);
-        if (instance != null) player.GetMethod("StopAllAnnouncements").Invoke(instance, null);
+        AnnouncementPlayer.Instance?.StopAllAnnouncements();
         RefreshConnection();
         Debug.Log("[MobileCasher] " + status);
     }
-    static bool RouteVoice(long amount, bool isTest) {
+    internal static bool RouteVoice(long amount, bool isTest) {
         var host = active;
         if (host == null) return true;
         try {
-            if (amount > 0 && host.dependency.IsEnabled) host.Send(amount, isTest);
+            if (amount > 0 && ModHelper.IsModRunning("announce_the_transaction") &&
+                (isTest || ModSettings.Enabled)) host.Send(amount, isTest);
         } catch (Exception e) { Debug.LogError("[MobileCasher] " + e.GetBaseException().Message); }
         return false; // Replaces only the dependency's voice. Other game audio stays under game control.
     }
@@ -124,17 +105,17 @@ public sealed class Bridge : MonoBehaviour {
         var host = active;
         if (host == null) return;
         try {
-            var instance = host.voiceInstance.GetValue(null,null);
+            var instance = AnnouncementPlayer.Instance;
             var store = PlayerStore.Instance;
-            if (instance != null && store != null) host.prime.Invoke(instance,new object[]{store,store.playerCash});
+            if (instance != null && store != null)
+                ModReflect.Call(instance, "EnsureBaselineBeforeTransaction", store, store.playerCash);
         } catch (Exception e) { Debug.LogWarning("[MobileCasher] " + e.GetBaseException().Message); }
     }
     internal static void FlushSingleSale(int cashBefore) {
         var host = active;
         if (host == null) return;
         try {
-            var instance = host.voiceInstance.GetValue(null,null);
-            if (instance != null) host.poll.Invoke(instance,new object[]{"SellItem",true,cashBefore});
+            AnnouncementPlayer.Instance?.PollCashNow("SellItem", true, cashBefore);
         } catch (Exception e) { Debug.LogWarning("[MobileCasher] " + e.GetBaseException().Message); }
     }
     [Serializable] class Receipt {
@@ -144,18 +125,19 @@ public sealed class Bridge : MonoBehaviour {
         public float speed, volume, gap;
     }
     void Send(long amount, bool test) {
-        object[] args = { amount, platform.GetValue(null,null), false };
-        var sounds = (List<string>)parser.Invoke(null,args);
+        bool isWeChat;
+        var sounds = AlipayNumberParser.BuildSoundSequence(amount, ModSettings.Platform, out isWeChat);
         var payer = test ? null : SaleScope.Current;
         string portrait = null;
         if (payer?.Sprite != null) try { portrait = Portrait.Encode(payer.Sprite); }
         catch (Exception e) { Debug.LogWarning("[MobileCasher] Portrait: " + e.Message); }
         var json = JsonUtility.ToJson(new Receipt {
-            platform = (bool)args[2] ? "wechat" : "alipay", amount = amount,
+            platform = isWeChat ? "wechat" : "alipay", amount = amount,
             name = test ? "播报测试" : payer?.Name ?? "店铺入账", portrait = portrait,
             time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), sounds = sounds.ToArray(),
-            speed = (float)speed.GetValue(null,null), volume = (float)volume.GetValue(null,null),
-            gap = (float)gap.GetValue(null,null)
+            speed = Mathf.Clamp(ModSettings.Speed, 0.5f, 2f),
+            volume = Mathf.Clamp(ModSettings.Volume, 0f, 3f),
+            gap = ModSettings.GapCompensationSec
         });
         server.Publish(json);
     }
@@ -187,7 +169,7 @@ public sealed class Bridge : MonoBehaviour {
         }
     }
     internal void Shutdown() {
-        if (active == this) { active = null; voice.UnpatchAll(voice.Id); }
+        if (active == this) active = null;
         if (connectionQr != null) UnityEngine.Object.Destroy(connectionQr);
         connectionQr = null; localUrl = null;
         server?.Dispose(); server = null;
@@ -196,5 +178,11 @@ public sealed class Bridge : MonoBehaviour {
         if (Current == this) Current = null;
         Shutdown();
     }
+}
+
+// The loader owns this patch and removes it together with the rest of this mod.
+[HarmonyPatch(typeof(AnnouncementPlayer), nameof(AnnouncementPlayer.AnnounceAmount))]
+internal static class PhoneAnnouncementPatch {
+    static bool Prefix(long amount, bool isTest) => Bridge.RouteVoice(amount, isTest);
 }
 }
